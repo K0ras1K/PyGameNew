@@ -1,4 +1,7 @@
 import random
+import os
+# import sys
+import pygame
 
 
 class Game:
@@ -8,14 +11,15 @@ class Game:
         self.redBomb = RedBomb(bombDamage, self.mainBoard.getBombCoords())
         self.bombDamage = bombDamage
         self.activatedBomb = (-1, -1)
-        #TODO При gameOver = True вызвать окно окончания игры
+        # TODO При gameOver = True вызвать окно окончания игры
         self.gameOver = False
         self.progress = 1
 
-    #TODO Вызывать по нажатию лкм по квадратику поля
+    # TODO Вызывать по нажатию лкм по квадратику поля
     def movePlayer(self, xCoord, yCoord):
         if self.canMove(xCoord, yCoord):
-            self.mainBoard.mainBoardNetz[self.mainBoard.getPlayerCoords()[0]][self.mainBoard.getPlayerCoords()[1]], self.mainBoard.mainBoardNetz[xCoord][yCoord] = 2, 3
+            self.mainBoard.mainBoardNetz[self.mainBoard.getPlayerCoords()[0]][self.mainBoard.getPlayerCoords()[1]], \
+                self.mainBoard.mainBoardNetz[xCoord][yCoord] = 2, 3
             self.mainBoard.printNetz()
             print()
             if self.redBomb.checkActivatedBomb(self.activatedBomb[0], self.activatedBomb[1], xCoord, yCoord):
@@ -24,7 +28,7 @@ class Game:
                 self.activatedBomb = (-1, -1)
             if self.redBomb.checkPlayer(xCoord, yCoord, self.mainBoard.getBombCoords()) != (-1, -1):
                 self.activatedBomb = (self.redBomb.checkPlayer(xCoord, yCoord, self.mainBoard.getBombCoords()))
-                #TODO Добавить вызывание звука активации бомбы
+                # TODO Добавить вызывание звука активации бомбы
                 print('Звук бомбы!')
                 print(self.activatedBomb)
                 print()
@@ -42,12 +46,12 @@ class Game:
             return True
         return False
 
-
-    #TODO Вызывать по нажатию пкм по квадратику
+    # TODO Вызывать по нажатию пкм по квадратику
     def breakIce(self, xCoord, yCoord):
         if self.canBreakIce(xCoord, yCoord):
             self.mainBoard.breakIce(xCoord, yCoord)
-        if self.redBomb.checkActivatedBomb(self.activatedBomb[0], self.activatedBomb[1], self.mainBoard.getPlayerCoords()[0], self.mainBoard.getPlayerCoords()[1]):
+        if self.redBomb.checkActivatedBomb(self.activatedBomb[0], self.activatedBomb[1],
+                                           self.mainBoard.getPlayerCoords()[0], self.mainBoard.getPlayerCoords()[1]):
             self.player.bombActivating(self.bombDamage)
         else:
             self.activatedBomb = (-1, -1)
@@ -59,7 +63,8 @@ class Game:
 
     def canBreakIce(self, xCoord, yCoord):
         if self.mainBoard.mainBoardNetz[xCoord][yCoord] != 2:
-            if self.player.canBreakIce(xCoord, yCoord, self.mainBoard.getPlayerCoords()[0], self.mainBoard.getPlayerCoords()[1], self.progress):
+            if self.player.canBreakIce(xCoord, yCoord, self.mainBoard.getPlayerCoords()[0],
+                                       self.mainBoard.getPlayerCoords()[1], self.progress):
                 return True
         print("Нельзя break")
         return False
@@ -71,7 +76,7 @@ class MainBoard:
         self.ySize = ySize
         self.bombSpawnChance = bombSpawnChance
         self.mainBoardNetz = [[self.getBoolByChance(self.bombSpawnChance) for i in range(self.xSize)] for j in
-                               range(self.ySize)]
+                              range(self.ySize)]
         self.mainBoardNetz[0][0] = 3
         for i in self.mainBoardNetz:
             print(i)
@@ -124,8 +129,6 @@ class RedBomb:
         return False
 
 
-
-
 class Player:
     def __init__(self, HP):
         self.HP = HP
@@ -135,7 +138,7 @@ class Player:
         if self.HP - damage > 0:
             self.HP -= damage
         else:
-            self.setDeadth()
+            self.setDeath()
 
     def canMove(self, xCoord, yCoord, lastX, lastY, progress):
         if progress % 2 != 0:
@@ -151,20 +154,135 @@ class Player:
             return True
         return False
 
-    def setDeadth(self):
+    def setDeath(self):
         self.HP = 0
 
 
+def load_image(name, color_key=None):
+    # загрузка картинок в игру
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname)
+    except pygame.error as message:
+        print('Не удаётся загрузить:', name)
+        raise SystemExit(message)
+    image = image.convert_alpha()
+    # очистка фона, если нужно
+    if color_key is not None:
+        if color_key == -1:
+            color_key = image.get_at((0, 0))
+        image.set_colorkey(color_key)
+    return image
+
+
+pygame.init()
+screen_size = (500, 500)
+screen = pygame.display.set_mode(screen_size)
+FPS = 50
+cells = [
+    load_image('ice.png'),
+    load_image('icebomb.png'),
+    load_image('land.png'),
+    load_image('player.png')
+]
+cell_width = cell_height = 50
+
+
+class ScreenFrame(pygame.sprite.Sprite):
+    # экранный объект
+    def __init__(self):
+        super().__init__()
+        self.rect = (0, 0, 500, 500)
+
+
+class SpriteGroup(pygame.sprite.Group):
+    # определение групп подвижных/неподвижных спрайтов
+    def __init__(self):
+        super().__init__()
+
+    def get_event(self, event):
+        for sprite in self:
+            sprite.get_event(event)
+
+
+class Sprite(pygame.sprite.Sprite):
+    # определение групп подвижных/неподвижных спрайтов
+    def __init__(self, group):
+        super().__init__(group)
+        self.rect = None
+
+    def get_event(self, event):
+        pass
+
+
+class Cell(Sprite):
+    # клетки
+    def __init__(self, cell_type, pos_x, pos_y):
+        pygame.sprite.Sprite.__init__(self)
+        self.cell_type = cell_type
+        self.pos_x = pos_x
+        self.pos_y = pos_y
+        self.image = cells[self.cell_type]
+        self.rect = self.image.get_rect().move(
+            cell_width * pos_x, cell_height * pos_y)
+
+    def update(self, events):
+        pos = pygame.mouse.get_pos()
+        hit = self.rect.collidepoint(pos)
+        for i in events:
+            if i.type == pygame.MOUSEBUTTONDOWN and hit:
+                if i.button == 1:
+                    game.movePlayer(self.pos_x, self.pos_y)
+
+                elif i.button == 3:
+                    game.breakIce(self.pos_x, self.pos_y)
+                    self.cell_type = 2
+                    self.image = cells[self.cell_type]
+
+
+clock = pygame.time.Clock()
+sprite_group = SpriteGroup()
+# hero_group = SpriteGroup()
 game = Game(10, 10, 10, 3, 3)
-game.breakIce(1, 1)
-game.movePlayer(1, 1)
-game.breakIce(2, 1)
-game.movePlayer(2, 1)
-game.breakIce(3, 1)
-game.movePlayer(3, 1)
-game.breakIce(4, 1)
-game.movePlayer(4, 1)
-game.breakIce(5, 1)
-game.movePlayer(5, 1)
-game.breakIce(6, 1)
-game.movePlayer(6, 1)
+
+
+'''def terminate():
+    # выход
+    pygame.quit()
+    sys.exit'''
+
+
+'''def start_screen():
+    # стартовый экран
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+        pygame.display.flip()
+        clock.tick(FPS)'''
+
+
+def generate_level(level):
+    # прорисовка уровня
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+                Cell(level[y][x], x, y)
+
+
+# def move(hero, movement):
+# движение героя
+
+running = True
+# start_screen()
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+    screen.fill(pygame.Color("black"))
+    sprite_group.draw(screen)
+    # hero_group.draw(screen)
+    clock.tick(FPS)
+    pygame.display.flip()
+pygame.quit()
+
