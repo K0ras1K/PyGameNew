@@ -180,10 +180,10 @@ screen_size = (500, 500)
 screen = pygame.display.set_mode(screen_size)
 FPS = 50
 cells = [
-    load_image('ice.png'),
-    load_image('icebomb.png'),
-    load_image('land.png'),
-    load_image('player.png')
+    load_image('ice50.png'),
+    load_image('icebomb50.png'),
+    load_image('land50.png'),
+    load_image('player50.png')
 ]
 cell_width = cell_height = 50
 
@@ -192,7 +192,7 @@ class ScreenFrame(pygame.sprite.Sprite):
     # экранный объект
     def __init__(self):
         super().__init__()
-        self.rect = (0, 0, 500, 500)
+        self.rect = (0, 0, 1000, 1000)
 
 
 class SpriteGroup(pygame.sprite.Group):
@@ -203,6 +203,10 @@ class SpriteGroup(pygame.sprite.Group):
     def get_event(self, event):
         for sprite in self:
             sprite.get_event(event)
+
+    def update(self, x, y, button):
+        for sprite in self:
+            sprite.update(x, y, button)
 
 
 class Sprite(pygame.sprite.Sprite):
@@ -219,25 +223,27 @@ class Cell(Sprite):
     # клетки
     def __init__(self, cell_type, pos_x, pos_y):
         pygame.sprite.Sprite.__init__(self)
+        self.detected = False
         self.cell_type = cell_type
         self.pos_x = pos_x
         self.pos_y = pos_y
-        self.image = cells[self.cell_type]
+        if cell_type == 1 and not self.detected:
+            self.image = cells[0]
+        else:
+            self.image = cells[self.cell_type]
         self.rect = self.image.get_rect().move(
             cell_width * pos_x, cell_height * pos_y)
 
-    def update(self, events):
-        pos = pygame.mouse.get_pos()
-        hit = self.rect.collidepoint(pos)
-        for i in events:
-            if i.type == pygame.MOUSEBUTTONDOWN and hit:
-                if i.button == 1:
-                    game.movePlayer(self.pos_x, self.pos_y)
+    def update(self, x, y, button):
+        if self.rect.collidepoint(x, y):
+            print(self.pos_x, self.pos_y)
+            if button == 1:
+                game.movePlayer(self.pos_x, self.pos_y)
 
-                elif i.button == 3:
-                    game.breakIce(self.pos_x, self.pos_y)
-                    self.cell_type = 2
-                    self.image = cells[self.cell_type]
+            elif button == 3:
+                game.breakIce(self.pos_x, self.pos_y)
+                self.cell_type = 2
+                self.image = cells[self.cell_type]
 
 
 clock = pygame.time.Clock()
@@ -267,22 +273,26 @@ def generate_level(level):
     # прорисовка уровня
     for y in range(len(level)):
         for x in range(len(level[y])):
-                Cell(level[y][x], x, y)
+            a = Cell(level[y][x], x, y)
+            sprite_group.add(a)
 
 
 # def move(hero, movement):
 # движение героя
 
 running = True
-# start_screen()
 while running:
+    generate_level(game.mainBoard.mainBoardNetz)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1 or event.button == 3:
+                x, y = event.pos
+                print(x, y)
+                sprite_group.update(x, y, event.button)
     screen.fill(pygame.Color("black"))
     sprite_group.draw(screen)
-    # hero_group.draw(screen)
     clock.tick(FPS)
     pygame.display.flip()
 pygame.quit()
-
