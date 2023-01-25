@@ -20,8 +20,6 @@ class Game:
         if self.canMove(xCoord, yCoord):
             self.mainBoard.mainBoardNetz[self.mainBoard.getPlayerCoords()[0]][self.mainBoard.getPlayerCoords()[1]], \
                 self.mainBoard.mainBoardNetz[xCoord][yCoord] = 2, 3
-            self.mainBoard.printNetz()
-            print()
             if self.redBomb.checkActivatedBomb(self.activatedBomb[0], self.activatedBomb[1], xCoord, yCoord):
                 self.player.bombActivating(self.bombDamage)
             else:
@@ -37,9 +35,6 @@ class Game:
                 print('Игра окончена')
                 print()
             self.progress += 1
-        else:
-            print('Нельзя! move')
-            print()
 
     def canMove(self, xCoord, yCoord):
         if self.mainBoard.mainBoardNetz[xCoord][yCoord] == 2:
@@ -59,14 +54,12 @@ class Game:
             self.gameOver = True
             print("Game Over")
         self.progress += 1
-        self.mainBoard.printNetz()
 
     def canBreakIce(self, xCoord, yCoord):
         if self.mainBoard.mainBoardNetz[xCoord][yCoord] != 2:
             if self.player.canBreakIce(xCoord, yCoord, self.mainBoard.getPlayerCoords()[0],
                                        self.mainBoard.getPlayerCoords()[1], self.progress):
                 return True
-        print("Нельзя break")
         return False
 
 
@@ -78,9 +71,6 @@ class MainBoard:
         self.mainBoardNetz = [[self.getBoolByChance(self.bombSpawnChance) for i in range(self.xSize)] for j in
                               range(self.ySize)]
         self.mainBoardNetz[0][0] = 3
-        for i in self.mainBoardNetz:
-            print(i)
-        print()
 
     def getBoolByChance(self, chance):
         if random.random() < chance / 100:
@@ -98,10 +88,10 @@ class MainBoard:
                     bombCoords.append((i, j))
         return bombCoords
 
-    def printNetz(self):
+    '''def printNetz(self):
         for i in self.mainBoardNetz:
             print(i)
-        print()
+        print()'''
 
     def getPlayerCoords(self):
         for i in range(len(self.mainBoardNetz)):
@@ -156,6 +146,7 @@ class Player:
 
     def setDeath(self):
         self.HP = 0
+        print('you died')
 
 
 def load_image(name, color_key=None):
@@ -233,10 +224,11 @@ class Cell(Sprite):
             self.image = cells[self.cell_type]
         self.rect = self.image.get_rect().move(
             cell_width * pos_x, cell_height * pos_y)
+        if cell_type == 3 and pos_y == 9:
+            print('you won')
 
     def update(self, x, y, button):
         if self.rect.collidepoint(x, y):
-            print(self.pos_x, self.pos_y)
             if button == 1:
                 game.movePlayer(self.pos_x, self.pos_y)
 
@@ -289,7 +281,6 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1 or event.button == 3:
                 x, y = event.pos
-                print(x, y)
                 sprite_group.update(x, y, event.button)
     screen.fill(pygame.Color("black"))
     sprite_group.draw(screen)
