@@ -42,7 +42,7 @@ class Game:
         if self.canBreakIce(xCoord, yCoord):
             self.mainBoard.breakIce(xCoord, yCoord)
         if self.redBomb.checkActivatedBomb(self.activatedBomb[0], self.activatedBomb[1],
-                                           self.mainBoard.getPlayerCoords()[0], self.mainBoard.getPlayerCoords()[1]):
+                                           self.mainBoard.getPlayerCoords()[0], self.mainBoard.getPlayerCoords()[1]) and self.mainBoard.mainBoardNetz[self.activatedBomb[0]][self.activatedBomb[1]] == 1:
             self.player.bombActivating(self.bombDamage)
         else:
             self.activatedBomb = (-1, -1)
@@ -72,6 +72,9 @@ class MainBoard:
         self.mainBoardNetz[1][1] = 0
         self.mainBoardNetz[0][1] = 0
         self.mainBoardNetz[9][9] = 0
+        for i in self.mainBoardNetz:
+            print(i)
+        print()
 
     def getBoolByChance(self, chance):
         if random.random() < chance / 100:
@@ -148,8 +151,6 @@ class Player:
 
 
 '''objects = []
-
-
 class Button():
     def __init__(self, x, y, width, height, buttonText='Button', onclickFunction=None, onePress=False):
         self.x = x
@@ -158,43 +159,30 @@ class Button():
         self.height = height
         self.onclickFunction = onclickFunction
         self.onePress = onePress
-
         self.fillColors = {
             'normal': '#ffffff',
             'hover': '#666666',
             'pressed': '#333333',
         }
-
         self.buttonSurface = pygame.Surface((self.width, self.height))
         self.buttonRect = pygame.Rect(self.x, self.y, self.width, self.height)
-
         self.buttonSurf = font.render(buttonText, True, (20, 20, 20))
-
         self.alreadyPressed = False
-
         objects.append(self)
-
     def process(self):
-
         mousePos = pygame.mouse.get_pos()
-
         self.buttonSurface.fill(self.fillColors['normal'])
         if self.buttonRect.collidepoint(mousePos):
             self.buttonSurface.fill(self.fillColors['hover'])
-
             if pygame.mouse.get_pressed(num_buttons=3)[0]:
                 self.buttonSurface.fill(self.fillColors['pressed'])
-
                 if self.onePress:
                     self.onclickFunction()
-
                 elif not self.alreadyPressed:
                     self.onclickFunction()
                     self.alreadyPressed = True
-
             else:
                 self.alreadyPressed = False
-
         self.buttonSurface.blit(self.buttonSurf, [
             self.buttonRect.width / 2 - self.buttonSurf.get_rect().width / 2,
             self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
@@ -402,7 +390,7 @@ def win_screen():
 
 
 def loss_screen():
-    text = ['Вы выиграли!',
+    text = ['Игра окончена!',
             f'Вы выиграли {ws}/{gs} игр.',
             'Нажмите любую кнопку, чтобы продолжить',
             ' игру, или закройте это окно, чтобы',
